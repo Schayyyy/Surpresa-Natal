@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Interativo</title>
+    <style>
+        body {
+            font-family: 'Montserrat', 'Lato', 'Raleway', sans-serif;
+            background-color: #ffffff;
+            color: #ff69b4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .floating-hearts {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .heart {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: rgba(255, 105, 180, 0.6);
+            border-radius: 50%;
+            animation: float 8s infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) translateX(0); opacity: 1; }
+            100% { transform: translateY(-10vh) translateX(50px); opacity: 0; }
+        }
+
+        .typing-effect {
+            font-size: 1.5rem;
+            margin: 20px;
+            text-align: center;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .transitions {
+            font-size: 1.2rem;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+        }
+
+        .progress {
+            margin: 20px;
+            height: 20px;
+            width: 80%;
+            background-color: #f2f2f2;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0;
+            background-color: #ff69b4;
+            transition: width 0.5s;
+        }
+
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            border: none;
+            background-color: #ff69b4;
+            color: white;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        button:hover {
+            background-color: #ff85c1;
+            transform: scale(1.1);
+        }
+
+        .dica-box {
+            background-color: #ff69b4;
+            color: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 10px;
+            width: 80%;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 2s ease-in-out, transform 1s ease;
+        }
+
+        .final-message {
+            font-size: 1.5rem;
+            text-align: center;
+            color: #ff69b4;
+            margin-top: 30px;
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        /* Estilos para telas pequenas (celulares) */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+                font-size: 1rem;
+            }
+            .typing-effect {
+                font-size: 1.2rem;
+            }
+            .heart {
+                width: 15px;
+                height: 15px;
+            }
+            .progress {
+                width: 100%;
+            }
+            .progress-bar {
+                width: 0%;
+            }
+            button {
+                font-size: 0.9rem;
+                padding: 8px 16px;
+            }
+            .quiz div {
+                margin-bottom: 10px;
+            }
+            .quiz button {
+                width: 100%;
+                margin-top: 10px;
+            }
+            .final-message {
+                font-size: 1.2rem;
+                margin-top: 20px;
+            }
+            .dica-box {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Corações Flutuantes -->
+    <div class="floating-hearts" id="hearts"></div>
+
+    <div id="content" class="container">
+        <div class="typing-effect" id="typing"></div>
+        <div class="hidden" id="question">
+            <p>Mas antes, preciso te contar um segredinho...</p>
+            <button id="yes">Sim</button>
+            <button id="no">Não</button>
+        </div>
+        <div class="transitions hidden" id="story"></div>
+        <div class="hidden" id="quiz"></div>
+        <div class="hidden final-message" id="final-message"></div>
+        <div class="hidden" id="gift-message"></div>
+    </div>
+    
+    <!-- Vídeo do YouTube (agora no final) -->
+    <div class="video-container hidden" style="text-align: center; margin-top: 20px;">
+         <iframe width="560" height="315" src="https://www.youtube.com/embed/9dTH2BnWSaY" 
+         title="Vídeo do YouTube Shorts" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" 
+         allowfullscreen></iframe>
+    </div>
+    
+    <script>
+        // Função para gerar corações flutuantes
+        function createFloatingHearts() {
+            const heartContainer = document.getElementById('hearts');
+            const heartCount = 30;
+            for (let i = 0; i < heartCount; i++) {
+                const heart = document.createElement('div');
+                heart.classList.add('heart');
+                heart.style.left = `${Math.random() * 100}%`;
+                heart.style.animationDuration = `${Math.random() * 4 + 4}s`; // Variar a duração da animação
+                heart.style.animationDelay = `${Math.random() * 2}s`; // Variar o delay da animação
+                heartContainer.appendChild(heart);
+            }
+        }
+        createFloatingHearts();
+
+        // Typing effect
+        const typingText = "Tenho uma surpresa especial para você...";
+        let i = 0;
+        const typingDiv = document.getElementById('typing');
+
+        function typeEffect() {
+            if (i < typingText.length) {
+                typingDiv.innerHTML += typingText.charAt(i);
+                i++;
+                setTimeout(typeEffect, 100);
+            } else {
+                setTimeout(() => {
+                    typingDiv.classList.add('hidden');
+                    document.getElementById('question').classList.remove('hidden');
+                }, 1000);
+            }
+        }
+        typeEffect();
+
+        // Button interaction
+        document.getElementById('yes').addEventListener('click', () => {
+            document.getElementById('question').classList.add('hidden');
+            showStory();
+        });
+        document.getElementById('no').addEventListener('click', () => {
+            document.getElementById('question').innerHTML = "Que pena, então sem presentes neste ano.";
+        });
+
+        // Story
+        const storyText = [
+            "Há pouco mais de dois anos, eu me apaixonei por você. ❤️",
+            "Naquela época, eu não imaginava o quanto viveríamos juntos em tão pouco tempo.",
+            "Cada momento ao seu lado é extraordinário. Você transformou completamente o meu mundo.",
+            "Este é o segundo Natal que celebramos juntos. 🎄",
+            "E quando penso no futuro, sei que quero passar todos os outros ao seu lado.",
+            "Hoje, quero agradecer por tudo. Por ser meu parceiro, meu amor, minha felicidade.",
+            "E, acima de tudo, por ser o meu melhor presente. 🎁",
+            "Que Deus continue iluminando nosso caminho, para que possamos construir uma vida cheia de amor, alegria e cumplicidade.",
+            "Agora, para ganhar o seu presente... que tal testar o quanto você me conhece? Vamos lá? 😊"
+        ];
+
+        function showStory() {
+            const storyDiv = document.getElementById('story');
+            let index = 0;
+
+            function showNext() {
+                if (index < storyText.length) {
+                    storyDiv.textContent = storyText[index];
+                    storyDiv.style.opacity = 1;
+                    storyDiv.classList.remove('hidden');
+                    setTimeout(() => {
+                        storyDiv.style.opacity = 0;
+                        setTimeout(showNext, 2000);
+                    }, 4000);
+                    index++;
+                } else {
+                    setTimeout(() => {
+                        storyDiv.classList.add('hidden');
+                        showQuiz();
+                    }, 2000);
+                }
+            }
+            showNext();
+        }
+
+        // Quiz com feedback divertido
+        function showQuiz() {
+            const quizDiv = document.getElementById('quiz');
+            quizDiv.classList.remove('hidden');
+            quizDiv.innerHTML = "<p>Vamos começar o quiz!</p>";
+            const questions = [
+                { question: "Quando demos o nosso primeiro beijo?", options: ["22/09", "29/09", "15/08", "01/10"], answer: 1 },
+                { question: "Qual foi a primeira série que assistimos juntos?", options: ["Stranger Things", "Paradise Police", "Friends", "The Office"], answer: 1 },
+                { question: "Onde foi o nosso primeiro date?", options: ["Na praça perto da nossa casa", "Restaurante italiano", "McDonald's", "Best Burguer"], answer: 3 },
+                { question: "No início, tínhamos um dia da semana classificado como 'nosso', qual era?", options: ["Domingo", "Sábado", "Sexta-feira", "Quinta-feira"], answer: 3 },
+                { question: "Tivemos uma noite intensa e marcante na nossa história, que nos levou a estarmos juntos hoje, qual foi?", options: ["14/02", "13/12", "15/10", "20/06"], answer: 1 },
+                { question: "O primeiro presente que te dei no Dia dos Namorados foi?", options: ["Um livro", "Um ursinho de pelúcia", "Caixa com cartinhas", "Um álbum de fotos nosso"], answer: 2 },
+                { question: "Temos uma bebida que descreve muito nós dois, qual é?", options: ["Vinho", "Cerveja", "Gin Tônica", "Coquetel de frutas"], answer: 1 },
+                { question: "Qual foi o presente que você me deu no meu aniversário de 19 anos?", options: ["Uma jaqueta de couro", "Colar e brincos", "Um relógio", "Um par de tênis"], answer: 1 },
+                { question: "Qual é a minha comida favorita?", options: ["Hamburguer", "Pizza", "Sushi", "Lasanha"], answer: 2 },
+                { question: "Onde demos o nosso primeiro beijo?", options: ["Na frente do cinema", "No parque", "Na porta de casa", "Calçada da minha mãe"], answer: 3 },
+            ];
+            let score = 0;
+            let currentQuestion = 0;
+            const progressDiv = document.createElement('div');
+            progressDiv.className = 'progress';
+            const progressBar = document.createElement('div');
+            progressBar.className = 'progress-bar';
+            progressDiv.appendChild(progressBar);
+            quizDiv.appendChild(progressDiv);
+
+            function loadQuestion() {
+                if (currentQuestion < questions.length) {
+                    const q = questions[currentQuestion];
+                    const questionDiv = document.createElement('div');
+                    questionDiv.innerHTML = `<p>${q.question}</p>`;
+                    q.options.forEach((opt, index) => {
+                        const btn = document.createElement('button');
+                        btn.textContent = opt;
+                        btn.classList.add('btn-response');
+                        btn.onclick = () => {
+                            if (index === q.answer) {
+                                score++;
+                                btn.classList.add('correct');
+                                btn.innerHTML += " ✔️";
+                            } else {
+                                btn.classList.add('incorrect');
+                                btn.innerHTML += " ❌";
+                            }
+                            setTimeout(() => {
+                                currentQuestion++;
+                                progressBar.style.width = `${(currentQuestion / questions.length) * 100}%`;
+                                loadQuestion();
+                            }, 1000);
+                        };
+                        questionDiv.appendChild(btn);
+                    });
+                    quizDiv.innerHTML = '';
+                    quizDiv.appendChild(progressDiv);
+                    quizDiv.appendChild(questionDiv);
+                } else {
+                    showResults();
+                }
+            }
+
+            function showResults() {
+                quizDiv.innerHTML = '';
+                const percentage = (score / questions.length) * 100;
+                let message = '';
+                if (percentage === 100) {
+                    message = "Incrível! Você me conhece perfeitamente! 💖";
+                } else if (percentage >= 70) {
+                    message = "Muito bem! Você me conhece muito bem! 😊";
+                } else if (percentage >= 40) {
+                    message = "Você acertou bastante, mas ainda pode me conhecer melhor! 😅";
+                } else {
+                    message = "Parece que você precisa prestar mais atenção! 😂";
+                }
+                const resultDiv = document.createElement('div');
+                resultDiv.classList.add('result-message');
+                resultDiv.textContent = message;
+                quizDiv.appendChild(resultDiv);
+                setTimeout(() => {
+                    resultDiv.style.opacity = 1;
+                    setTimeout(() => {
+                        quizDiv.classList.add('hidden');
+                        showFinalMessage();
+                    }, 3000);
+                }, 2000);
+            }
+
+            loadQuestion();
+        }
+
+        // Função para exibir as últimas mensagens
+        function showFinalMessage() {
+            const giftMessageDiv = document.getElementById('gift-message');
+            giftMessageDiv.classList.remove('hidden');
+            giftMessageDiv.innerHTML = "<p>E agora o seu presente, está preparado?...</p>";
+
+            // Exibe a segunda mensagem após 5 segundos
+            setTimeout(() => {
+                giftMessageDiv.innerHTML = "<p>Espero que goste, eu amo você! Com carinho, Schay.</p>";
+            }, 5000); // Atraso de 5 segundos
+        }
+            
+        // Finalização
+        setTimeout(() => {
+            document.getElementById('final-message').style.opacity = 1;
+            document.getElementById('final-message').textContent = "Surpresa! Eu te amo muito. 💖";
+            document.querySelector('.video-container').classList.remove('hidden');
+        }, 100000);
+    </script>
+</body>
+</html>
+</html>
